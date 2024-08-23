@@ -27,7 +27,6 @@ If there are several test grids in the task, we average the score across all of 
 
 import glob
 import json
-import logging
 import random
 from collections import Counter
 from pathlib import Path
@@ -36,18 +35,20 @@ from typing import Callable, Literal
 
 import numpy as np
 
+from logs import reset_logger
 from preprocess import grid2data
-
-
-# Global logger
-logger = logging.getLogger('arc')
-logger.setLevel(logging.DEBUG)
 
 
 def create_submission(
     sample_paths: list[str],
     predict: Callable[[dict], list[tuple[list[str], list[str], np.ndarray]]],
 ):
+    """
+    Create a submission file based on the predictions made by the `predict` function.
+    :param sample_paths: Paths to `.json` files
+    :param predict: A function that takes a dictionary of data and returns a list of predictions
+    :return: A dictionary of submission data in the ARC submission format
+    """
     print(f'There are {len(sample_paths)} samples to process...')
 
     submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], list[list[int]]]]] = {}
@@ -57,20 +58,7 @@ def create_submission(
             data = json.load(f)
 
             # Set up the logger specifically for this task
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-                handler.close()
-
-            file_handler = logging.FileHandler(f'logs/{task_id}.txt', mode='w')
-            file_handler.setLevel(logging.DEBUG)
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-
-            formatter = logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s')
-            file_handler.setFormatter(formatter)
-            console_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-            logger.addHandler(console_handler)
+            logger = reset_logger(task_id)
 
             # Make `num_predictions` predictions for each test grid
             logger.info(f'Processing {task_id}... {len(data["test"])} test grids')
@@ -119,13 +107,10 @@ def create_submission(
 
 def score(submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], list[list[int]]]]]) -> float:
     """ Calculate top-2 accuracy """
-    acc = 0       # Total sum of scores
+    total = 0       # Total sum of scores
     for task, predicted_tests in submission.items():
         # Read the ground truth from either `evaluation/` or `training/` folder
-        if Path(f'arc/data/evaluation/{task}.json').exists():
-            path = f'arc/data/evaluation/{task}.json'
-        else:
-            path = f'arc/data/training/{task}.json'
+        path = f'arc/data/evaluation/{task}.json' if Path(f'arc/data/evaluation/{task}.json').exists() else f'arc/data/training/{task}.json'
 
         with open(path, 'r') as f:
             data = json.load(f)
@@ -134,20 +119,14 @@ def score(submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], lis
                 ground_truth = ground_truth['output']
                 if prediction_attempts['attempt_1'] == ground_truth or prediction_attempts['attempt_2'] == ground_truth:
                     task_score += 1
-            acc += task_score / len(data['test'])
-            print(f'Task {task} => Task score = {task_score / len(data['test'])} => acc: {acc}')
-    print(f'Final score: {acc} of {len(submission)} tasks')
-    return acc / len(submission)
+            total += task_score / len(data['test'])
+            print(f'Task {task} => Task score = {task_score / len(data['test'])} => total: {total}')
+    print(f'Final score: {total} of {len(submission)} tasks')
+    return total / len(submission)
 
 
 if __name__ == '__main__':
     def solve(data: dict):
-        """
-        Should return:
-            1. List of messages
-            2. List of responses
-            3. List of grids
-        """
         return [
             (['Hello?'], ['Hi, how can I help?'], np.array([['R', 'G'], ['B', 'R']])),
         ]
