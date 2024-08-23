@@ -1,8 +1,8 @@
 """
 The submission module is responsible for:
  * properly processing the dataset
-  * creating a properly formatted submission
-  * and scoring the results
+ * creating a properly formatted submission
+ * and scoring the results
 
 The scoring uses top-2 accuracy - like described in the ARC challenge.
 For each task, we predict exactly 2 outputs for every test input grid contained in the task.
@@ -27,6 +27,7 @@ If there are several test grids in the task, we average the score across all of 
 
 import glob
 import json
+import logging
 import random
 from collections import Counter
 from pathlib import Path
@@ -36,6 +37,11 @@ from typing import Callable, Literal
 import numpy as np
 
 from preprocess import grid2data
+
+
+# Global logger
+logger = logging.getLogger('arc')
+logger.setLevel(logging.DEBUG)
 
 
 def create_submission(
@@ -55,17 +61,30 @@ def create_submission(
     else:
         print('Creating a submission with all samples.')
 
-    logs = open('logs.txt', 'w')
     submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], list[list[int]]]]] = {}
     for path in samples:
         with open(path, 'r') as f:
             task_id = path.split('/')[-1].split('.')[0]
             data = json.load(f)
 
+            # Set up the logger specifically for this task
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+                handler.close()
+
+            file_handler = logging.FileHandler(f'logs/{task_id}.txt', mode='w')
+            file_handler.setLevel(logging.DEBUG)
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
+
+            formatter = logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s')
+            file_handler.setFormatter(formatter)
+            console_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
+
             # Make `num_predictions` predictions for each test grid
-            print('-' * 50)
-            print(f'Processing {task_id}... {len(data['test'])} test grids. Making {nb_hypothesis} hypothesis and {nb_predictions_per_hypothesis} predictions per hypothesis for each')
-            logs.write(f'Processing {task_id}... {len(data["test"])} test grids. Making {nb_hypothesis} hypothesis and {nb_predictions_per_hypothesis} predictions per hypothesis for each\n')
+            logger.info(f'Processing {task_id}... {len(data["test"])} test grids. Making {nb_hypothesis} hypothesis and {nb_predictions_per_hypothesis} predictions per hypothesis for each')
             for test in data['test']:
                 prediction_data = {
                     'train': data['train'],
@@ -73,12 +92,9 @@ def create_submission(
                 }
                 predicted_grids: list[tuple[str, ...]] = []
                 predictions = predict(prediction_data, nb_hypothesis, nb_predictions_per_hypothesis)
-                print(f'Total #Predictions: {len(predictions)}')
+                logger.info(f'There are {len(predictions)} predictions in total')
                 for messages, responses, grid in predictions:
-                    print(f'Messages {len(messages)}, Responses {len(responses)} => Grid {grid.shape if isinstance(grid, np.ndarray) else None}', grid, sep='\n')
-                    for m, r in zip(messages, responses):
-                        logs.write(f'\nUser:\n{m}\n')
-                        logs.write(f'\nAssistant:\n{r}\n')
+                    logger.info(f'Messages {len(messages)}, Responses {len(responses)} => Grid {grid.shape if isinstance(grid, np.ndarray) else None}')
                     if isinstance(grid, np.ndarray):
                         predicted_grids.append(tuple([' '.join(row) for row in grid]))
                     else:
@@ -86,8 +102,8 @@ def create_submission(
 
                 # Get the 2 most common grids (with counter) out of the predicted_grids
                 most_common_grids = Counter(predicted_grids).most_common(2)
-                print(f'There are {len(predicted_grids)} predictions, out of which {len(Counter(predicted_grids))} are unique.')
-                print(f'Most common grids: {most_common_grids}')
+                logger.info(f'There are {len(predicted_grids)} predicted grids, out of which {len(Counter(predicted_grids))} are unique.')
+                logger.debug(f'Most common grids: {most_common_grids}')
 
                 # Convert those to data of numbers with `grid2data`
                 if len(most_common_grids) > 0:
@@ -98,8 +114,8 @@ def create_submission(
                     two = grid2data(list(most_common_grids[1][0]))
                 else:
                     two = one
-                print(f'Grid 1:\n{one}')
-                print(f'Grid 2:\n{two}')
+                logger.debug(f'Grid 1:\n{one}')
+                logger.debug(f'Grid 2:\n{two}')
 
                 submission.setdefault(task_id, []).append({
                     'attempt_1': one,
@@ -108,8 +124,7 @@ def create_submission(
 
     with open('submission.json', 'w') as f:
         json.dump(submission, f, indent=2)
-    logs.close()
-    print('Submission created successfully!')
+    logger.info('Submission created successfully!')
     return submission
 
 
