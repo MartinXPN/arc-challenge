@@ -1,4 +1,6 @@
+import glob
 import logging
+import random
 from pprint import pprint
 from textwrap import dedent
 
@@ -189,10 +191,9 @@ if __name__ == '__main__':
     #     print('\n'.join(row.strip() for row in data2grid(data['test'][0]['output'])))
 
     # Submit & Score
-    sub = create_submission(
-        'arc/data/training', predict=solve, num_random_samples=2,
-        nb_hypothesis=2, nb_predictions_per_hypothesis=4,
-    )
+    samples = list(glob.glob(f'arc/data/evaluation/*.json'))
+    random.shuffle(samples)
+    sub = create_submission(samples[:2], predict=lambda data: solve(data, nb_hypothesis=2, nb_predictions_per_hypothesis=2))
     print('-' * 50, 'SUBMISSION:', sep='\n')
     pprint(sub)
     print(score(sub))

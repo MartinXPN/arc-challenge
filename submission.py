@@ -45,24 +45,13 @@ logger.setLevel(logging.DEBUG)
 
 
 def create_submission(
-    dataset_path,
-    predict: Callable[[dict, int, int], list[tuple[list[str], list[str], np.ndarray]]],
-    num_random_samples: int | None = None,
-    nb_hypothesis: int = 4,
-    nb_predictions_per_hypothesis: int = 2,
+    sample_paths: list[str],
+    predict: Callable[[dict], list[tuple[list[str], list[str], np.ndarray]]],
 ):
-    samples = list(glob.glob(f'{dataset_path}/*.json'))
-    random.shuffle(samples)
-    print(f'There are {len(samples)} samples.')
-
-    if num_random_samples:
-        print(f'Creating a submission with {num_random_samples} random samples.')
-        samples = samples[:num_random_samples]
-    else:
-        print('Creating a submission with all samples.')
+    print(f'There are {len(sample_paths)} samples to process...')
 
     submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], list[list[int]]]]] = {}
-    for path in samples:
+    for path in sample_paths:
         with open(path, 'r') as f:
             task_id = path.split('/')[-1].split('.')[0]
             data = json.load(f)
@@ -84,14 +73,14 @@ def create_submission(
             logger.addHandler(console_handler)
 
             # Make `num_predictions` predictions for each test grid
-            logger.info(f'Processing {task_id}... {len(data["test"])} test grids. Making {nb_hypothesis} hypothesis and {nb_predictions_per_hypothesis} predictions per hypothesis for each')
+            logger.info(f'Processing {task_id}... {len(data["test"])} test grids')
             for test in data['test']:
                 prediction_data = {
                     'train': data['train'],
                     'test': [test],
                 }
                 predicted_grids: list[tuple[str, ...]] = []
-                predictions = predict(prediction_data, nb_hypothesis, nb_predictions_per_hypothesis)
+                predictions = predict(prediction_data)
                 logger.info(f'There are {len(predictions)} predictions in total')
                 for messages, responses, grid in predictions:
                     logger.info(f'Messages {len(messages)}, Responses {len(responses)} => Grid {grid.shape if isinstance(grid, np.ndarray) else None}')
@@ -152,7 +141,7 @@ def score(submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], lis
 
 
 if __name__ == '__main__':
-    def solve(data: dict, nb_hypothesis: int, nb_predictions_per_hypothesis: int):
+    def solve(data: dict):
         """
         Should return:
             1. List of messages
@@ -162,7 +151,10 @@ if __name__ == '__main__':
         return [
             (['Hello?'], ['Hi, how can I help?'], np.array([['R', 'G'], ['B', 'R']])),
         ]
-    res = create_submission('arc/data/evaluation', predict=solve, num_random_samples=5)
+
+    samples = list(glob.glob(f'arc/data/evaluation/*.json'))
+    random.shuffle(samples)
+    res = create_submission(samples[:5], predict=solve)
     pprint(res)
 
     print(score({
