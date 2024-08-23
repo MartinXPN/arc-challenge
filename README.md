@@ -1,8 +1,7 @@
 # ARC Challenge
 
 ## TODO
-- [ ] Implement separate prediction functions with retries for GPT and Claude
-- [x] Add `cache_control` option to Claude
+- [ ] Implement a separate client with retries for GPT
 - [ ] Predict with `n` parameter for GPT (for batch prediction)
 
 ## Augmentations
