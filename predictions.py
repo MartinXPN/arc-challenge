@@ -137,6 +137,7 @@ def gen_solutions(
             #  For example, you can call a fill() function 5 times with different coordinates to fill parts of the grid 
             #  instead of writing a generic algorithm to detect which coordinates should initiate the calls.
             # You can use numpy functions to repeat a certain portion of an array (copy-paste, etc.).
+            # Be very careful with the dimensions of the grid and the coordinates you are using to not go out of bounds.
             ...
 
             # Print the final output

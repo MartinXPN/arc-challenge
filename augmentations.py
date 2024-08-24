@@ -17,21 +17,38 @@ def search(small: np.ndarray, large: np.ndarray) -> list[tuple[int, int]] | tupl
     :param large: The large grid
     :return: The top-left coordinates (r, c) of the small grid in the large grid
     """
-    if small.shape == large.shape:
+    if small.shape > large.shape:
         return None
 
     res = []
     for r in range(large.shape[0] - small.shape[0] + 1):
         for c in range(large.shape[1] - small.shape[1] + 1):
-            if np.all(large[r:r + small.shape[0], c:c + small.shape[1]] == small):
+            same, comparisons = True, 0
+            for i in range(small.shape[0]):
+                for j in range(small.shape[1]):
+                    if small[i, j] == '?' or large[r + i, c + j] == '?':
+                        continue
+                    if small[i, j] != large[r + i, c + j]:
+                        same = False
+                        comparisons += 1
+                        break
+                    comparisons += 1
+                if not same:
+                    break
+            if same and comparisons > 2:
                 res.append((r, c))
     return res if len(res) > 1 else res[0] if len(res) == 1 else None
 
 
-def search_prompt(inp: np.ndarray, out: np.ndarray) -> str:
+def search_prompt(
+    inp: np.ndarray, out: np.ndarray,
+    ignore_color_input: str | None = None, ignore_color_output: str | None = None,
+) -> str:
     """
     :param inp: input grid
     :param out: output grid
+    :param ignore_color_input: the color to ignore in the input grid
+    :param ignore_color_output: the color to ignore in the output grid
     :return: the prompt that represents the augmentations
 
     [Different sizes] `search(in, out)` or `search(out, in)` => tell coordinates + operation
@@ -41,14 +58,25 @@ def search_prompt(inp: np.ndarray, out: np.ndarray) -> str:
     * search with flips
     * search with transpose
     """
-    # Exact search
     prompt = ''
+
+    # Replace the ignored colors with '?'
+    if ignore_color_input:
+        inp[inp == ignore_color_input] = '?'
+        prompt += f'After ignoring (not comparing) all the elements with color {ignore_color_input} in the input grid:\n'
+    if ignore_color_output:
+        out[out == ignore_color_output] = '?'
+        prompt += f'After ignoring (not comparing) all the elements with color {ignore_color_output} in the output grid:\n'
+
+    # Exact search
     res = search(inp, out)
     prompt += f'One can find the exact input grid in the output grid starting at the top-left coordinates {res}.\n' if res else ''
+    if 'One can find' in prompt:
+        return prompt
+
     res = search(out, inp)
     prompt += f'One can find the exact output grid in the input grid starting at the top-left coordinates {res}.\n' if res else ''
-
-    if prompt != '':
+    if 'One can find' in prompt:
         return prompt
 
     # Search with rotations
@@ -84,7 +112,28 @@ def search_prompt(inp: np.ndarray, out: np.ndarray) -> str:
     res = search(np.transpose(out), inp)
     prompt += f'One can find the transposed output grid in the input grid starting at the top-left coordinates {res}.\n' if res else ''
 
-    return prompt
+
+    if 'One can find' in prompt:
+        return prompt
+
+    if np.sum(inp == '?') > 0 or np.sum(out == '?') > 0:
+        return ''
+
+    # Replace the most common color in the input grid with ? as well as in the output grid and search again
+    most_common_input = Counter(inp.flatten()).most_common(1)[0][0]
+    most_common_output = Counter(out.flatten()).most_common(1)[0][0]
+    res = search_prompt(inp.copy(), out.copy(), ignore_color_input=most_common_input)
+    if 'One can find' in res:
+        return res
+
+    res = search_prompt(inp.copy(), out.copy(), ignore_color_output=most_common_output)
+    if 'One can find' in res:
+        return res
+
+    res = search_prompt(inp.copy(), out.copy(), ignore_color_input=most_common_input, ignore_color_output=most_common_output)
+    if 'One can find' in res:
+        return res
+    return ''
 
 
 def components(grid: np.ndarray) -> np.ndarray:
@@ -258,3 +307,6 @@ if __name__ == '__main__':
         print('TEST PROMPT:')
         print(get_test_augmentations(data))
     print('-' * 50)
+
+    with open('arc/data/evaluation/762cd429.json') as f:
+        print(get_train_augmentations(json.load(f)))
