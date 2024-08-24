@@ -57,15 +57,15 @@ def gen_hypothesis(data: dict, nb_hypothesis: int = 1) -> list[tuple[str, str]]:
         \n
         \n
         Below are the puzzles:
-        """
+        <puzzles>
         >>>{prompt}
-        """
+        </puzzles>
         \n
         Assume that the coordinate count starts at 0. For example, the top-left cell is (0, 0).
         Below is some more information about the puzzles:
-        """
+        <additional_info>
         >>>{augmentations}
-        """
+        </additional_info>
         \n
         Can you analyze all the example puzzles above step-by-step, and tell what might be the pattern in the puzzles after that?
         Please DO NOT print the puzzles. Just analyze them and tell the pattern you see.
@@ -110,14 +110,14 @@ def gen_solutions(
     for hyp_idx, (message, response) in enumerate(hypothesis):
         messages = [message, dedent('''
             Great, following the pattern you recognized above, now have a look at the test puzzle presented below.
-            """
+            <puzzle>
             >>>{test_prompt}
-            """
+            </puzzle>
             \n
             Below is some more information about the puzzle:
-            """
+            <additional_info>
             >>>{test_augmentations}
-            """
+            </additional_info>
             Please provide details about how the approach would work on the test input.
             You can tell specific numbers and coordinates for this test puzzle (resulting griz size, colors, etc.).
             \n
