@@ -1,8 +1,12 @@
 # ARC Challenge
 
 ## TODO
-- [ ] Implement a separate client with retries for GPT
-- [ ] Predict with `n` parameter for GPT (for batch prediction)
+- [ ] GPT-based model
+  - [ ] Implement a separate client with retries for GPT
+  - [ ] Predict with `n` parameter to get `n` predictions
+- [ ] LLAMA-based model
+- [ ] Add example solutions to the prediction prompt?
+- [ ] Add a validation + refinement step?
 
 ## Augmentations
 We augment each example with several transformations that introduce some human inductive bias to help the model.
@@ -12,6 +16,7 @@ We augment each example with several transformations that introduce some human i
    * search with rotations
    * search with flips (horizontal, vertical, horizontal + vertical)
    * search with transpose
+   * search by ignoring the most common color
 
 2. [Different sizes] + [Same sizes] components(in) => tell numbers per component + component size + color + first coordinate
 
