@@ -1,7 +1,9 @@
 import glob
+import json
 import random
-from pprint import pprint
 
+from clients import AnthropicClient
+from logs import reset_logger
 from predictions import gen_solutions
 from submission import create_submission, score
 
@@ -9,10 +11,14 @@ from submission import create_submission, score
 if __name__ == '__main__':
     samples = list(glob.glob(f'arc/data/evaluation/*.json'))
     random.shuffle(samples)
+
+    client = AnthropicClient()
     sub = create_submission(
         samples[:5],
-        predict=lambda data: gen_solutions(data, nb_hypothesis=3, nb_predictions_per_hypothesis=4),
+        predict=lambda data: gen_solutions(client=client, data=data, nb_hypothesis=3, nb_predictions_per_hypothesis=4),
     )
-    print('-' * 50, 'SUBMISSION:', sep='\n')
-    pprint(sub)
-    print(score(sub))
+
+    logger = reset_logger('arc')
+    logger.info('Submission created successfully!\n')
+    logger.info(json.dumps(sub, indent=4))
+    logger.info(f'Top 2 Accuracy: {score(sub)}')

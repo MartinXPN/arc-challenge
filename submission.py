@@ -121,7 +121,7 @@ def score(submission: dict[str, list[dict[Literal['attempt_1', 'attempt_2'], lis
                     task_score += 1
             total += task_score / len(data['test'])
             print(f'Task {task} => Task score = {task_score / len(data['test'])} => total: {total}')
-    print(f'Final score: {total} of {len(submission)} tasks')
+    print(f'Total score: {total} out of {len(submission)} tasks')
     return total / len(submission)
 
 

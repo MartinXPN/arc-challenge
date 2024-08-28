@@ -3,6 +3,10 @@ import time
 from abc import abstractmethod, ABC
 
 from anthropic import Anthropic
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 class BaseClient(ABC):
@@ -10,7 +14,7 @@ class BaseClient(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def gen_responses(self, messages: list[str], responses: list[str], nb_responses: int, retries: int) -> list[str]:
+    def gen_responses(self, messages: list[str], responses: list[str], nb_responses: int, retries: int = 10) -> list[str]:
         ...
 
 
