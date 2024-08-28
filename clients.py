@@ -3,6 +3,7 @@ import time
 from abc import abstractmethod, ABC
 
 from anthropic import Anthropic
+from openai import OpenAI
 from dotenv import load_dotenv
 
 
@@ -59,3 +60,40 @@ class AnthropicClient(BaseClient):
 
         all_responses = [self.gen_response(messages, responses, retries) for _ in range(nb_responses)]
         return all_responses
+
+
+class OpenAIClient(BaseClient):
+    def __init__(self, api_key: str | None = None):
+        if api_key is None:
+            api_key = os.environ.get('OPENAI_API_KEY')
+        if api_key is None:
+            raise ValueError('OPENAI_API_KEY is required either as an environment variable or as an argument')
+        super().__init__(api_key)
+        self.client = OpenAI(api_key=self.api_key)
+
+
+    def gen_responses(self, messages: list[str], responses: list[str], nb_responses: int, retries: int = 10) -> list[str]:
+        assert len(messages) == len(responses) + 1, 'We should respond to the latest message'
+        assert nb_responses >= 1, 'We need at least one response'
+
+        if retries <= 0:
+            return [''] * nb_responses
+
+        conversations = []
+        for m, r in zip(messages, responses):
+            conversations.append({'role': 'user', 'content': m})
+            conversations.append({'role': 'assistant', 'content': r})
+        conversations.append({'role': 'user', 'content': messages[-1]})
+
+        try:
+            response = self.client.chat.completions.create(
+                model='gpt-4o-2024-08-06',
+                messages=conversations,
+                n=nb_responses,
+            )
+            results = [choice.message.content for choice in response.choices]
+            return results
+        except Exception as e:
+            print(e, f'Retrying {retries - 1} more times after waiting...')
+            time.sleep(1)
+            return self.gen_responses(messages, responses, nb_responses, retries - 1)

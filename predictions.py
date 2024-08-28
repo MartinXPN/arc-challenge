@@ -68,7 +68,7 @@ def gen_hypothesis(
         </additional_info>
         \n
         Can you analyze all the example puzzles above step-by-step, and tell what might be the pattern in the puzzles after that?
-        Please DO NOT print the puzzles. Just analyze them and tell the pattern you see.
+        DO NOT print the puzzles. Just analyze them and tell the pattern you see.
         It can be anything related to
          colors, rows, columns, shapes, heights, widths, alternating patterns, diagonals,
          connections, rotations, symmetries, mirroring, distances, filling blank spaces, counting,

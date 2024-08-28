@@ -1,9 +1,6 @@
 # ARC Challenge
 
 ## TODO
-- [ ] GPT-based model
-  - [ ] Implement a separate client with retries for GPT
-  - [ ] Predict with `n` parameter to get `n` predictions
 - [ ] LLAMA-based model
 - [ ] Add example solutions to the prediction prompt?
 - [ ] Add a validation + refinement step?
