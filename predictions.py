@@ -147,6 +147,9 @@ def gen_solutions(
             ```
 
             Note that the code has to run for the test input only. So, it's totally okay to hardcode things.
+            DO NOT write the initial part of the code (that you can see above) that initializes the grid.
+            It's already provided (scipy.ndimage and numpy are imported as well) and converted to a numpy array.
+            Just write a comment `# grid = ...` to indicate that the grid is already initialized.
             In the program, DO NOT print anything other than the final output grid.
         ''').strip()]
         messages[-1] = messages[-1].replace('>>>{test_prompt}', get_test_prompt(data))
@@ -162,7 +165,20 @@ def gen_solutions(
             logger.debug(f'>>> ASSISTANT {pred_idx + 1}\n{prediction}\n')
 
             code = extract_code(responses[-1])
-            output = run(code)
+            code_with_grid = dedent('''
+                import numpy as np
+                import scipy.ndimage
+                
+                grid = >>>{test_input_grid_str}
+                grid = [list(row.replace(' ', '')) for row in grid]
+                grid = np.array(grid)
+                
+                >>>{code}
+            ''').strip()
+            code_with_grid = code_with_grid.replace('>>>{test_input_grid_str}', test_input_grid_str)
+            code_with_grid = code_with_grid.replace('>>>{code}', code)
+            logger.debug(f'CODE:\n{code_with_grid}\n')
+            output = run(code_with_grid)
             if isinstance(output, np.ndarray):
                 logger.debug('RUN OUTPUT:\n' + '\n'.join([' '.join(row) for row in output]))
             else:
