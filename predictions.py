@@ -62,7 +62,7 @@ def gen_hypothesis(
         </puzzles>
         \n
         Assume that the coordinate count starts at 0. For example, the top-left cell is (0, 0).
-        Below is some more information about the puzzles:
+        Below is some more information about the puzzles (some of which might be irrelevant to the pattern):
         <additional_info>
         >>>{augmentations}
         </additional_info>
@@ -138,7 +138,7 @@ def gen_solutions(
             #  instead of writing a generic algorithm to detect which coordinates should initiate the calls.
             # You can use numpy functions to repeat a certain portion of an array (copy-paste, etc.).
             # Be very careful with the dimensions of the grid and the coordinates you are using to not go out of bounds.
-            # You can implement a BFS algorithm to find a shortest path between two points, etc.
+            # You can implement a BFS algorithm to find the shortest path between two points, etc.
             # Use any algorithm you think is necessary to solve the puzzle.
             ...
 

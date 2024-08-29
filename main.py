@@ -12,10 +12,10 @@ if __name__ == '__main__':
     samples = list(glob.glob(f'arc/data/evaluation/*.json'))
     random.shuffle(samples)
 
-    client = OpenAIClient()
+    client = AnthropicClient()
     sub = create_submission(
         samples[:5],
-        predict=lambda data: gen_solutions(client=client, data=data, nb_hypothesis=3, nb_predictions_per_hypothesis=4),
+        predict=lambda data: gen_solutions(client=client, data=data, nb_hypothesis=4, nb_predictions_per_hypothesis=5),
     )
 
     logger = reset_logger('arc')
