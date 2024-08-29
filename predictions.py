@@ -73,9 +73,9 @@ def gen_hypothesis(
          colors, rows, columns, shapes, heights, widths, alternating patterns, diagonals,
          connections, rotations, symmetries, mirroring, distances, filling blank spaces, counting,
          associations, wrapping, expanding, shrinking, repeating, flipping, inverting, centering, shifting,
-         intersections, overlapping, unions, tetris arrangements, filling patterns with DFS,
+         reflection of certain components, tetris arrangements, filling patterns with DFS,
          extrapolation of the input figures into the output, clockwise and counter-clockwise movements,
-         differences, fractals, and many other patterns which you need to identify.
+         intersections, overlapping, unions, differences, fractals, and many other patterns which you need to identify.
     ''').strip()
     # We do this to avoid issues with indentation (prompt is multi-line => it messes up with dedent)
     prompt = get_train_prompt(data)
