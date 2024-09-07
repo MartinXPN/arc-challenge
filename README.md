@@ -1,7 +1,9 @@
 # ARC Challenge
 
 ## TODO
-- [ ] LLAMA-based model
+- [ ] Try LLAMA-based models
+  - [ ] [Meta Llama](https://huggingface.co/meta-llama/Meta-Llama-3.1-70B)
+  - [ ] [Reflection Llama](https://huggingface.co/mattshumer/Reflection-Llama-3.1-70B)
 - [ ] Add example solutions to the prediction prompt?
 - [ ] Add a validation + refinement step?
 
