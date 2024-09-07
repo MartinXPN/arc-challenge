@@ -76,6 +76,7 @@ def gen_hypothesis(
          reflection of certain components, tetris arrangements, filling patterns with DFS,
          extrapolation of the input figures into the output, clockwise and counter-clockwise movements,
          intersections, overlapping, unions, differences, fractals, and many other patterns which you need to identify.
+        Think carefully.
     ''').strip()
     # We do this to avoid issues with indentation (prompt is multi-line => it messes up with dedent)
     prompt = get_train_prompt(data)
@@ -151,6 +152,7 @@ def gen_solutions(
             It's already provided (scipy.ndimage and numpy are imported as well) and converted to a numpy array.
             Just write a comment `# grid = ...` to indicate that the grid is already initialized.
             In the program, DO NOT print anything other than the final output grid.
+            Think carefully.
         ''').strip()]
         messages[-1] = messages[-1].replace('>>>{test_prompt}', get_test_prompt(data))
         messages[-1] = messages[-1].replace('>>>{test_augmentations}', get_test_augmentations(data))

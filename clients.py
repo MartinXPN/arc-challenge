@@ -3,9 +3,9 @@ import time
 from abc import abstractmethod, ABC
 
 from anthropic import Anthropic
-from openai import OpenAI
 from dotenv import load_dotenv
-
+from openai import OpenAI
+from transformers import pipeline
 
 load_dotenv()
 
@@ -93,6 +93,44 @@ class OpenAIClient(BaseClient):
             )
             results = [choice.message.content for choice in response.choices]
             return results
+        except Exception as e:
+            print(e, f'Retrying {retries - 1} more times after waiting...')
+            time.sleep(1)
+            return self.gen_responses(messages, responses, nb_responses, retries - 1)
+
+
+class ReflectionLlamaClient(BaseClient):
+    """
+    https://huggingface.co/mattshumer/Reflection-Llama-3.1-70B
+    """
+
+    def __init__(self):
+        super().__init__('')
+        self.pipe = pipeline('text-generation', model='mattshumer/Reflection-Llama-3.1-70B')
+
+    def gen_responses(self, messages: list[str], responses: list[str], nb_responses: int, retries: int = 10) -> list[str]:
+        assert len(messages) == len(responses) + 1, 'We should respond to the latest message'
+        assert nb_responses >= 1, 'We need at least one response'
+
+        if retries <= 0:
+            return [''] * nb_responses
+
+        conversations = [
+            {'role': 'system', 'content': 'You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.'},
+        ]
+        for m, r in zip(messages, responses):
+            conversations.append({'role': 'user', 'content': m})
+            conversations.append({'role': 'assistant', 'content': r})
+        conversations.append({'role': 'user', 'content': messages[-1]})
+
+        try:
+            res = self.pipe(
+                conversations,
+                max_length=100000, temperature=0.7, top_p=0.95,
+                num_return_sequences=nb_responses,
+            )
+            print('RES:', res)
+            return [choice['generated_text'] for choice in res]
         except Exception as e:
             print(e, f'Retrying {retries - 1} more times after waiting...')
             time.sleep(1)
