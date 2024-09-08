@@ -2,8 +2,10 @@ import os
 import time
 from abc import abstractmethod, ABC
 
+import requests
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from gradio_client import Client as GradioClient
 from openai import OpenAI
 from transformers import pipeline
 
@@ -103,10 +105,18 @@ class ReflectionLlamaClient(BaseClient):
     """
     https://huggingface.co/mattshumer/Reflection-Llama-3.1-70B
     """
+    BASE_URL = 'https://api-inference.huggingface.co/models/mattshumer/Reflection-Llama-3.1-70B'
 
-    def __init__(self):
-        super().__init__('')
-        self.pipe = pipeline('text-generation', model='mattshumer/Reflection-Llama-3.1-70B')
+    def __init__(self, api_key: str | None = None, run_locally: bool = False):
+        self.run_locally = run_locally
+        if api_key is None:
+            api_key = os.environ.get('HUGGINGFACE_KEY')
+
+        super().__init__(api_key)
+        if run_locally:
+            self.pipe = pipeline('text-generation', model='mattshumer/Reflection-Llama-3.1-70B')
+        else:
+            self.client = GradioClient('gokaygokay/Reflection-70B-llamacpp')
 
     def gen_responses(self, messages: list[str], responses: list[str], nb_responses: int, retries: int = 10) -> list[str]:
         assert len(messages) == len(responses) + 1, 'We should respond to the latest message'
@@ -124,11 +134,20 @@ class ReflectionLlamaClient(BaseClient):
         conversations.append({'role': 'user', 'content': messages[-1]})
 
         try:
-            res = self.pipe(
-                conversations,
-                max_length=100000, temperature=0.7, top_p=0.95,
-                num_return_sequences=nb_responses,
-            )
+            if self.run_locally:
+                res = self.pipe(conversations, max_length=128000, temperature=0.7, top_p=0.95, num_return_sequences=nb_responses)
+            else:
+                response = requests.post(self.BASE_URL, headers={'Authorization': f'Bearer {self.api_key}'}, json={
+                    'inputs': conversations,
+                    'parameters': {
+                        'max_length': 128000,
+                        'temperature': 0.7,
+                        'top_p': 0.95,
+                        'num_return_sequences': nb_responses,
+                    },
+                })
+                res = response.json()
+
             print('RES:', res)
             return [choice['generated_text'] for choice in res]
         except Exception as e:
