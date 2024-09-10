@@ -1,6 +1,7 @@
 # ARC Challenge
 
 ## TODO
+- [ ] Add Llama-based models
 - [ ] Add example solutions to the prediction prompt?
 - [ ] Add a validation + refinement step?
 
